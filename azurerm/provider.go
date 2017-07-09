@@ -108,6 +108,8 @@ func Provider() terraform.ResourceProvider {
 			"azurerm_network_interface":      resourceArmNetworkInterface(),
 			"azurerm_network_security_group": resourceArmNetworkSecurityGroup(),
 			"azurerm_network_security_rule":  resourceArmNetworkSecurityRule(),
+
+			"azurerm_postgresql_server":         resourceArmPostgreSQLServer(),
 			"azurerm_public_ip":              resourceArmPublicIp(),
 
 			"azurerm_redis_cache": resourceArmRedisCache(),
@@ -126,7 +128,6 @@ func Provider() terraform.ResourceProvider {
 			"azurerm_storage_queue":           resourceArmStorageQueue(),
 			"azurerm_storage_table":           resourceArmStorageTable(),
 			"azurerm_subnet":                  resourceArmSubnet(),
-
 			"azurerm_template_deployment":       resourceArmTemplateDeployment(),
 			"azurerm_traffic_manager_endpoint":  resourceArmTrafficManagerEndpoint(),
 			"azurerm_traffic_manager_profile":   resourceArmTrafficManagerProfile(),
@@ -258,6 +259,7 @@ func registerAzureResourceProvidersWithSubscription(providerList []resources.Pro
 			"Microsoft.Cache":             struct{}{},
 			"Microsoft.ContainerRegistry": struct{}{},
 			"Microsoft.ContainerService":  struct{}{},
+			"Microsoft.DBforPostgreSQL":   struct{}{},
 			"Microsoft.Network":           struct{}{},
 			"Microsoft.Cdn":               struct{}{},
 			"Microsoft.Storage":           struct{}{},
