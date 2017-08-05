@@ -12,11 +12,11 @@ import (
 
 func resourceArmAnalysisServices() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceArmResourceGroupCreate,
-		Read:   resourceArmResourceGroupRead,
-		Update: resourceArmResourceGroupUpdate,
-		Exists: resourceArmResourceGroupExists,
-		Delete: resourceArmResourceGroupDelete,
+		Create: resourceArmArmAnalysisServicesCreate,
+		Read:   resourceArmArmAnalysisServicesRead,
+		Update: resourceArmArmAnalysisServicesUpdate,
+		Exists: resourceArmArmAnalysisServicesExists,
+		Delete: resourceArmArmAnalysisServicesDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
 		},
@@ -26,7 +26,7 @@ func resourceArmAnalysisServices() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validateArmResourceGroupName,
+				ValidateFunc: validateArmArmAnalysisServicesName,
 			},
 
 			"location": locationSchema(),
@@ -36,7 +36,7 @@ func resourceArmAnalysisServices() *schema.Resource {
 	}
 }
 
-func validateArmResourceGroupName(v interface{}, k string) (ws []string, es []error) {
+func validateArmArmAnalysisServicesName(v interface{}, k string) (ws []string, es []error) {
 	value := v.(string)
 
 	if len(value) > 80 {
@@ -54,7 +54,7 @@ func validateArmResourceGroupName(v interface{}, k string) (ws []string, es []er
 	return
 }
 
-func resourceArmResourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceArmArmAnalysisServicesUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient)
 	rivieraClient := client.rivieraClient
 
@@ -79,10 +79,10 @@ func resourceArmResourceGroupUpdate(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf("Error updating resource group: %s", updateResponse.Error)
 	}
 
-	return resourceArmResourceGroupRead(d, meta)
+	return resourceArmArmAnalysisServicesRead(d, meta)
 }
 
-func resourceArmResourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceArmArmAnalysisServicesCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient)
 	rivieraClient := client.rivieraClient
 
@@ -116,10 +116,10 @@ func resourceArmResourceGroupCreate(d *schema.ResourceData, meta interface{}) er
 	// 	return fmt.Errorf("Error waiting for Resource Group (%s) to become available: %s", name, err)
 	// }
 
-	return resourceArmResourceGroupRead(d, meta)
+	return resourceArmArmAnalysisServicesRead(d, meta)
 }
 
-func resourceArmResourceGroupRead(d *schema.ResourceData, meta interface{}) error {
+func resourceArmArmAnalysisServicesRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient)
 	rivieraClient := client.rivieraClient
 
@@ -145,7 +145,7 @@ func resourceArmResourceGroupRead(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-func resourceArmResourceGroupExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceArmArmAnalysisServicesExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	client := meta.(*ArmClient)
 	rivieraClient := client.rivieraClient
 
@@ -163,7 +163,7 @@ func resourceArmResourceGroupExists(d *schema.ResourceData, meta interface{}) (b
 	return false, nil
 }
 
-func resourceArmResourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceArmArmAnalysisServicesDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*ArmClient)
 	rivieraClient := client.rivieraClient
 
