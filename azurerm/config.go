@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
+	"github.com/Azure/azure-sdk-for-go/arm/analysisservices"
 	"github.com/Azure/azure-sdk-for-go/arm/appinsights"
 	"github.com/Azure/azure-sdk-for-go/arm/cdn"
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
@@ -46,6 +47,7 @@ type ArmClient struct {
 
 	rivieraClient *riviera.Client
 
+	analysisClient         analysisservices.ServersClient
 	availSetClient         compute.AvailabilitySetsClient
 	usageOpsClient         compute.UsageClient
 	vmExtensionImageClient compute.VirtualMachineExtensionImagesClient

@@ -3,9 +3,8 @@ package azurerm
 import (
 	"fmt"
 	"log"
-	"regexp"
-	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/arm/analysisservices"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/jen20/riviera/azure"
 )
@@ -15,7 +14,6 @@ func resourceArmAnalysisServices() *schema.Resource {
 		Create: resourceArmArmAnalysisServicesCreate,
 		Read:   resourceArmArmAnalysisServicesRead,
 		Update: resourceArmArmAnalysisServicesUpdate,
-		Exists: resourceArmArmAnalysisServicesExists,
 		Delete: resourceArmArmAnalysisServicesDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -23,10 +21,27 @@ func resourceArmAnalysisServices() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validateArmArmAnalysisServicesName,
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+
+			"resource_group_name": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+
+			"sku_name": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
+
+			"sku_tier": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 
 			"location": locationSchema(),
@@ -36,131 +51,119 @@ func resourceArmAnalysisServices() *schema.Resource {
 	}
 }
 
-func validateArmArmAnalysisServicesName(v interface{}, k string) (ws []string, es []error) {
-	value := v.(string)
-
-	if len(value) > 80 {
-		es = append(es, fmt.Errorf("%q may not exceed 80 characters in length", k))
-	}
-
-	if strings.HasSuffix(value, ".") {
-		es = append(es, fmt.Errorf("%q may not end with a period", k))
-	}
-
-	if matched := regexp.MustCompile(`[\(\)\.a-zA-Z0-9_-]`).Match([]byte(value)); !matched {
-		es = append(es, fmt.Errorf("%q may only contain alphanumeric characters, dash, underscores, parentheses and periods", k))
-	}
-
-	return
-}
-
 func resourceArmArmAnalysisServicesUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*ArmClient)
-	rivieraClient := client.rivieraClient
+	client := meta.(*ArmClient).analysisClient
 
-	if !d.HasChange("tags") {
-		return nil
-	}
+	log.Printf("[INFO] preparing arguments for AzureRM Analysis Sever creation.")
 
 	name := d.Get("name").(string)
-	newTags := d.Get("tags").(map[string]interface{})
-
-	updateRequest := rivieraClient.NewRequestForURI(d.Id())
-	updateRequest.Command = &azure.UpdateResourceGroup{
-		Name: name,
-		Tags: *expandTags(newTags),
+	location := d.Get("location").(string)
+	resGroup := d.Get("resource_group_name").(string)
+	tags := d.Get("tags").(map[string]interface{})
+	skuName := d.Get("sku_name").(string)
+	skuTier := d.Get("sku_tier").(string)
+	server := analysisservices.Server{
+		Name:     &name,
+		Location: &location,
+		Sku: &analysisservices.ResourceSku{
+			Name: analysisservices.SkuName(skuName),
+			Tier: analysisservices.SkuTier(skuTier),
+		},
+		Tags: expandTags(tags),
 	}
 
-	updateResponse, err := updateRequest.Execute()
+	_, error := client.Create(resGroup, name, server, make(chan struct{}))
+	err := <-error
 	if err != nil {
-		return fmt.Errorf("Error updating resource group: %s", err)
+		return err
 	}
-	if !updateResponse.IsSuccessful() {
-		return fmt.Errorf("Error updating resource group: %s", updateResponse.Error)
+
+	read, err := client.GetDetails(resGroup, name)
+	if err != nil {
+		return err
 	}
+
+	if read.ID == nil {
+		return fmt.Errorf("Cannot read  Analysis Server %s (resource group %s) ID", name, resGroup)
+	}
+
+	d.SetId(*read.ID)
 
 	return resourceArmArmAnalysisServicesRead(d, meta)
 }
 
 func resourceArmArmAnalysisServicesCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*ArmClient)
-	rivieraClient := client.rivieraClient
+	client := meta.(*ArmClient).analysisClient
 
-	createRequest := rivieraClient.NewRequest()
-	createRequest.Command = &azure.CreateResourceGroup{
-		Name:     d.Get("name").(string),
-		Location: d.Get("location").(string),
-		Tags:     *expandTags(d.Get("tags").(map[string]interface{})),
+	log.Printf("[INFO] preparing arguments for AzureRM Analysis Sever creation.")
+
+	name := d.Get("name").(string)
+	location := d.Get("location").(string)
+	resGroup := d.Get("resource_group_name").(string)
+	tags := d.Get("tags").(map[string]interface{})
+	skuName := d.Get("sku_name").(string)
+	skuTier := d.Get("sku_tier").(string)
+	server := analysisservices.Server{
+		Name:     &name,
+		Location: &location,
+		Sku: &analysisservices.ResourceSku{
+			Name: analysisservices.SkuName(skuName),
+			Tier: analysisservices.SkuTier(skuTier),
+		},
+		Tags: expandTags(tags),
 	}
 
-	createResponse, err := createRequest.Execute()
+	_, error := client.Create(resGroup, name, server, make(chan struct{}))
+	err := <-error
 	if err != nil {
-		return fmt.Errorf("Error creating resource group: %s", err)
-	}
-	if !createResponse.IsSuccessful() {
-		return fmt.Errorf("Error creating resource group: %s", createResponse.Error)
+		return err
 	}
 
-	resp := createResponse.Parsed.(*azure.CreateResourceGroupResponse)
-	d.SetId(*resp.ID)
+	read, err := client.GetDetails(resGroup, name)
+	if err != nil {
+		return err
+	}
 
-	// TODO(jen20): Decide whether we need this or not and migrate to use @stack72's work if so
-	// log.Printf("[DEBUG] Waiting for Resource Group (%s) to become available", name)
-	// stateConf := &resource.StateChangeConf{
-	// 	Pending: []string{"Accepted"},
-	// 	Target:  []string{"Succeeded"},
-	// 	Refresh: resourceGroupStateRefreshFunc(client, name),
-	// 	Timeout: 10 * time.Minute,
-	// }
-	// if _, err := stateConf.WaitForState(); err != nil {
-	// 	return fmt.Errorf("Error waiting for Resource Group (%s) to become available: %s", name, err)
-	// }
+	if read.ID == nil {
+		return fmt.Errorf("Cannot read  Analysis Server %s (resource group %s) ID", name, resGroup)
+	}
+
+	d.SetId(*read.ID)
 
 	return resourceArmArmAnalysisServicesRead(d, meta)
 }
 
 func resourceArmArmAnalysisServicesRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*ArmClient)
-	rivieraClient := client.rivieraClient
+	client := meta.(*ArmClient).analysisClient
 
-	readRequest := rivieraClient.NewRequestForURI(d.Id())
-	readRequest.Command = &azure.GetResourceGroup{}
-
-	readResponse, err := readRequest.Execute()
+	id, err := parseAzureResourceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error reading resource group: %s", err)
+		return err
 	}
-	if !readResponse.IsSuccessful() {
-		log.Printf("[INFO] Error reading resource group %q - removing from state", d.Id())
-		d.SetId("")
-		return fmt.Errorf("Error reading resource group: %s", readResponse.Error)
-	}
+	resGroup := id.ResourceGroup
+	name := id.Path["servers"]
 
-	resp := readResponse.Parsed.(*azure.GetResourceGroupResponse)
+	resp, err := client.GetDetails(resGroup, name)
+	if err != nil {
+		if responseWasNotFound(resp.Response) {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("Error making Read request on Azure Analysis Server Set %s: %s", name, err)
+	}
 
 	d.Set("name", resp.Name)
 	d.Set("location", azureRMNormalizeLocation(*resp.Location))
+	d.Set("resource_group_name", resGroup)
+
+	if resp.Sku != nil {
+		d.Set("sku_name", resp.Sku.Name)
+		d.Set("sku_tier", resp.Sku.Tier)
+	}
+
 	flattenAndSetTags(d, resp.Tags)
 
 	return nil
-}
-
-func resourceArmArmAnalysisServicesExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	client := meta.(*ArmClient)
-	rivieraClient := client.rivieraClient
-
-	readRequest := rivieraClient.NewRequestForURI(d.Id())
-	readRequest.Command = &azure.GetResourceGroup{}
-
-	readResponse, err := readRequest.Execute()
-	if err != nil {
-		return false, fmt.Errorf("Error reading resource group: %s", err)
-	}
-	if readResponse.IsSuccessful() {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func resourceArmArmAnalysisServicesDelete(d *schema.ResourceData, meta interface{}) error {
