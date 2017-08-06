@@ -143,6 +143,8 @@ func resourceArmArmAnalysisServicesRead(d *schema.ResourceData, meta interface{}
 	resGroup := id.ResourceGroup
 	name := id.Path["servers"]
 
+	return fmt.Errorf("In Read method and the servers name is %s", name)
+
 	resp, err := client.GetDetails(resGroup, name)
 	if err != nil {
 		if responseWasNotFound(resp.Response) {
