@@ -143,15 +143,13 @@ func resourceArmArmAnalysisServicesRead(d *schema.ResourceData, meta interface{}
 	resGroup := id.ResourceGroup
 	name := id.Path["servers"]
 
-	return fmt.Errorf("In Read method and the servers name is %s", name)
-
 	resp, err := client.GetDetails(resGroup, name)
 	if err != nil {
 		if responseWasNotFound(resp.Response) {
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error making Read request on Azure Analysis Server Set %s: %s", name, err)
+		return nil
 	}
 
 	d.Set("name", resp.Name)
