@@ -222,6 +222,12 @@ func (c *Config) getArmClient() (*ArmClient, error) {
 	asc.Sender = autorest.CreateSender(withRequestLogging())
 	client.availSetClient = asc
 
+	assc := analysisservices.NewServersClientWithBaseURI(endpoint, c.SubscriptionID)
+	setUserAgent(&assc.Client)
+	assc.Authorizer = auth
+	assc.Sender = autorest.CreateSender(withRequestLogging())
+	client.analysisClient = assc
+
 	uoc := compute.NewUsageClientWithBaseURI(endpoint, c.SubscriptionID)
 	setUserAgent(&uoc.Client)
 	uoc.Authorizer = auth
