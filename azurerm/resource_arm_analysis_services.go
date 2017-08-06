@@ -6,14 +6,13 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/arm/analysisservices"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/jen20/riviera/azure"
 )
 
 func resourceArmAnalysisServices() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceArmArmAnalysisServicesCreate,
 		Read:   resourceArmArmAnalysisServicesRead,
-		Update: resourceArmArmAnalysisServicesUpdate,
+		Update: resourceArmArmAnalysisServicesCreate,
 		Delete: resourceArmArmAnalysisServicesDelete,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -49,47 +48,6 @@ func resourceArmAnalysisServices() *schema.Resource {
 			"tags": tagsSchema(),
 		},
 	}
-}
-
-func resourceArmArmAnalysisServicesUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*ArmClient).analysisClient
-
-	log.Printf("[INFO] preparing arguments for AzureRM Analysis Sever creation.")
-
-	name := d.Get("name").(string)
-	location := d.Get("location").(string)
-	resGroup := d.Get("resource_group_name").(string)
-	tags := d.Get("tags").(map[string]interface{})
-	skuName := d.Get("sku_name").(string)
-	skuTier := d.Get("sku_tier").(string)
-	server := analysisservices.Server{
-		Name:     &name,
-		Location: &location,
-		Sku: &analysisservices.ResourceSku{
-			Name: analysisservices.SkuName(skuName),
-			Tier: analysisservices.SkuTier(skuTier),
-		},
-		Tags: expandTags(tags),
-	}
-
-	_, error := client.Create(resGroup, name, server, make(chan struct{}))
-	err := <-error
-	if err != nil {
-		return err
-	}
-
-	read, err := client.GetDetails(resGroup, name)
-	if err != nil {
-		return err
-	}
-
-	if read.ID == nil {
-		return fmt.Errorf("Cannot read  Analysis Server %s (resource group %s) ID", name, resGroup)
-	}
-
-	d.SetId(*read.ID)
-
-	return resourceArmArmAnalysisServicesRead(d, meta)
 }
 
 func resourceArmArmAnalysisServicesCreate(d *schema.ResourceData, meta interface{}) error {
@@ -167,20 +125,17 @@ func resourceArmArmAnalysisServicesRead(d *schema.ResourceData, meta interface{}
 }
 
 func resourceArmArmAnalysisServicesDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*ArmClient)
-	rivieraClient := client.rivieraClient
+	client := meta.(*ArmClient).analysisClient
 
-	deleteRequest := rivieraClient.NewRequestForURI(d.Id())
-	deleteRequest.Command = &azure.DeleteResourceGroup{}
-
-	deleteResponse, err := deleteRequest.Execute()
+	id, err := parseAzureResourceID(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error deleting resource group: %s", err)
+		return err
 	}
-	if !deleteResponse.IsSuccessful() {
-		return fmt.Errorf("Error deleting resource group: %s", deleteResponse.Error)
-	}
+	resGroup := id.ResourceGroup
+	name := id.Path["servers"]
 
-	return nil
+	_, error := client.Delete(resGroup, name, make(chan struct{}))
+	err = <-error
 
+	return err
 }
