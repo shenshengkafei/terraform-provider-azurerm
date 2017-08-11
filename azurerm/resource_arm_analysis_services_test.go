@@ -92,7 +92,7 @@ resource "azurerm_resource_group" "test" {
 }
 
 resource "azurerm_analysis_services" "test" {
-    name = "acctestavset-%d"
+    name = "acctestavset%d"
     location = "${azurerm_resource_group.test.location}"
 	resource_group_name = "${azurerm_resource_group.test.name}"
 	location            = "West US"
