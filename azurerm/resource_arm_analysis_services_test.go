@@ -41,7 +41,7 @@ func testCheckAzureRMAnalysisServicesExists(name string) resource.TestCheckFunc 
 		serverName := rs.Primary.Attributes["name"]
 		resourceGroup, hasResourceGroup := rs.Primary.Attributes["resource_group_name"]
 		if !hasResourceGroup {
-			return fmt.Errorf("Bad: no resource group found in state for Analysis Server: %s", availSetName)
+			return fmt.Errorf("Bad: no resource group found in state for Analysis Server: %s", serverName)
 		}
 
 		conn := testAccProvider.Meta().(*ArmClient).analysisClient
