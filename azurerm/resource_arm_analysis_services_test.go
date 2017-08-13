@@ -49,7 +49,7 @@ func TestAccAzureRMAnalysisServices_prod(t *testing.T) {
 		Config: config,
 	}
 
-	resource.testStepConfig(opts, state, step)
+	resource.ApplyConfig(opts, state, step)
 }
 
 func testCheckAzureRMAnalysisServicesExists(name string) resource.TestCheckFunc {
