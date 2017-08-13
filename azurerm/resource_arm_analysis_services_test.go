@@ -30,6 +30,26 @@ func TestAccAzureRMAnalysisServices_basic(t *testing.T) {
 	})
 }
 
+func TestAccAzureRMAnalysisServices_prod(t *testing.T) {
+	if ctxProviders == nil {
+		ctxProviders = make(map[string]terraform.ResourceProviderFactory)
+	}
+	// add any fixed providers
+	for k, p := range testAccProviders {
+		ctxProviders[k] = terraform.ResourceProviderFactoryFixed(p)
+	}
+
+	opts := terraform.ContextOpts{Providers: ctxProviders}
+
+	// A single state variable to track the lifecycle, starting with no state
+	var state *terraform.State
+	step := resource.TestStep{
+		Config: config,
+	}
+
+	testStepConfig(opts, state, step)
+}
+
 func testCheckAzureRMAnalysisServicesExists(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Ensure we have enough information in state to look up in API
