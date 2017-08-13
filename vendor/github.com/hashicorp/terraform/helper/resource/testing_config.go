@@ -8,6 +8,14 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
+// ApplyConfig does "Plan" and "Apply" operations with provided config
+func ApplyConfig(
+	opts terraform.ContextOpts,
+	state *terraform.State,
+	step TestStep) (*terraform.State, error) {
+	return testStep(opts, state, step)
+}
+
 // testStepConfig runs a config-mode test step
 func testStepConfig(
 	opts terraform.ContextOpts,
